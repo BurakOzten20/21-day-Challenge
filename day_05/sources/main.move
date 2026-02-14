@@ -8,7 +8,7 @@
 module challenge::day_05 {
     use std::vector;
 
-    // Copy from day_04
+    // --- Day 4'ten gelen yapılar ---
     public struct Habit has copy, drop {
         name: vector<u8>,
         completed: bool,
@@ -41,9 +41,17 @@ module challenge::day_05 {
     // - If valid, marks that habit's completed field as true
     // Use vector::length() to get the length
     // Use vector::borrow_mut() to get a mutable reference to an element
-    // public fun complete_habit(list: &mut HabitList, index: u64) {
-    //     // Your code here
-    //     // Hint: if (index < length) { ... }
-    // }
-}
+    public fun complete_habit(list: &mut HabitList, index: u64) {
+        // 1. Listenin uzunluğunu al
+        let len = vector::length(&list.habits);
 
+        // 2. Index geçerli mi kontrol et (if/else)
+        if (index < len) {
+            // 3. O elemanı değiştirilebilir (mutable) olarak al
+            let habit = vector::borrow_mut(&mut list.habits, index);
+            
+            // 4. Durumunu güncelle
+            habit.completed = true;
+        };
+    }
+}
