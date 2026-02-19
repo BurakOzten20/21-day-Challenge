@@ -8,19 +8,19 @@
 module challenge::day_08 {
     use std::string::String;
 
-    // TODO: Define a struct called 'Task' with:
-    // - title: String
-    // - reward: u64
-    // - done: bool
-    // Add 'copy' and 'drop' abilities
-    // public struct Task has copy, drop {
-    //     // Your fields here
-    // }
+    // GÖREV 1: 'Task' adında bir yapı oluşturuyoruz
+    public struct Task has copy, drop {
+        title: String, // Görevin adı (örn: "Sistem Açığını Bul")
+        reward: u64,   // Verilecek ödül miktarı
+        done: bool,    // Tamamlandı mı?
+    }
 
-    // TODO: Write a constructor function 'new_task'
-    // that takes title and reward, returns a Task with done = false
-    // public fun new_task(title: String, reward: u64): Task {
-    //     // Your code here
-    // }
+    // GÖREV 2: Yeni bir görev oluşturan fonksiyon
+    public fun new_task(title: String, reward: u64): Task {
+        Task {
+            title,           // Parametreden gelen isim
+            reward,          // Parametreden gelen ödül
+            done: false,     // Yeni görev başta her zaman 'tamamlanmamış' olur
+        }
+    }
 }
-
