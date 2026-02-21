@@ -4,48 +4,59 @@
 /// 1. Learn about visibility modifiers (public vs private)
 /// 2. Design a public API
 /// 3. Write a function to complete tasks
-///
-/// Note: You can copy code from day_09/sources/solution.move if needed
 
 module challenge::day_10 {
-    use std::string::String;
+    // String modülünü ve utf8 çevirisi için 'Self' fonksiyonlarını ekliyoruz
+    use std::string::{Self, String};
 
-    // Copy from day_09: TaskStatus enum and Task struct
-    public enum TaskStatus has copy, drop {
+    // TODO: Copy from day_09: TaskStatus enum and Task struct
+    // İleriye dönük olarak objelerin blockchain'de saklanabilmesi için 'store' yeteneğini ekledik!
+    public enum TaskStatus has copy, drop, store {
         Open,
         Completed,
     }
 
-    public struct Task has copy, drop {
+    public struct Task has copy, drop, store {
         title: String,
         reward: u64,
         status: TaskStatus,
     }
 
+    // Yeni görev oluşturan ana fonksiyonumuz
     public fun new_task(title: String, reward: u64): Task {
         Task {
             title,
             reward,
-            status: TaskStatus::Open,
+            status: TaskStatus::Open, // Varsayılan olarak açık başlar
         }
+    }
+
+    // Ekstra Yardımcı: Dışarıdan gelen ham bayt verisini (vector<u8>) String'e çeviren fonksiyon
+    public fun create_task(title_bytes: vector<u8>, reward: u64): Task {
+        let title_str = string::utf8(title_bytes);
+        new_task(title_str, reward)
     }
 
     public fun is_open(task: &Task): bool {
         task.status == TaskStatus::Open
     }
 
-    // TODO: Write a public function 'complete_task' that:
-    // - Takes task: &mut Task
-    // - Sets task.status = TaskStatus::Completed
-    // This should be public so users can call it
-    // public fun complete_task(task: &mut Task) {
-    //     // Your code here
-    // }
+    // TODO: Write a public function 'complete_task'
+    // Kullanıcıların dışarıdan çağırıp görevleri tamamlayabilmesi için 'public' yaptık
+    public fun complete_task(task: &mut Task) {
+        task.status = TaskStatus::Completed;
+    }
 
     // TODO: (Optional) Write a private helper function
-    // Private functions use 'fun' instead of 'public fun'
-    // They can only be called from within the same module
-    // BONUS: Add a public function that calls your private helper
-    //        (e.g. 'has_valid_reward' that internally calls 'internal_helper')
-}
+    // Güvenlik kontrolü yapan GİZLİ (private) fonksiyon. Sadece 'fun' yazılıdır.
+    // Dışarıdan kimse çağıramaz, sadece bu modül içinden erişilebilir.
+    fun check_reward_limit(reward: u64): bool {
+        reward > 0 // Ödül miktarı sıfırdan büyük olmalı
+    }
 
+    // BONUS: Add a public function that calls your private helper
+    // Dışarıya açık (public) bir fonksiyon ama arka planda bizim gizli fonksiyonu çalıştırıyor.
+    public fun has_valid_reward(task: &Task): bool {
+        check_reward_limit(task.reward)
+    }
+}
