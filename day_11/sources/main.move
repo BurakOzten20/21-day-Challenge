@@ -4,22 +4,18 @@
 /// 1. Learn about the address type
 /// 2. Create a TaskBoard that tracks ownership
 /// 3. Understand ownership in practice
-///
-/// Note: You can copy code from day_10/sources/solution.move if needed
-/// 
-/// Related: Day 10 (Visibility), Day 12 (Building on TaskBoard)
 
 module challenge::day_11 {
     use std::vector;
     use std::string::String;
 
-    // Copy from day_10: TaskStatus enum and Task struct
-    public enum TaskStatus has copy, drop {
+    // Day 10'dan gelen yapılar (İleriye dönük 'store' yetenekleri korundu)
+    public enum TaskStatus has copy, drop, store {
         Open,
         Completed,
     }
 
-    public struct Task has copy, drop {
+    public struct Task has copy, drop, store {
         title: String,
         reward: u64,
         status: TaskStatus,
@@ -37,26 +33,26 @@ module challenge::day_11 {
         task.status = TaskStatus::Completed;
     }
 
-    // TODO: Define a struct called 'TaskBoard' with:
-    // - owner: address (the address that owns this board)
-    // - tasks: vector<Task>
-    // Add 'drop' ability
-    // public struct TaskBoard has drop {
-    //     // Your fields here
-    // }
+    // --- DAY 11 GÖREVLERİ ---
 
-    // TODO: Write a constructor 'new_board' that takes owner: address
-    // and returns an empty TaskBoard
-    // public fun new_board(owner: address): TaskBoard {
-    //     // Your code here
-    // }
+    // GÖREV 1: 'TaskBoard' adında yeni bir yapı oluşturuyoruz.
+    // Bu pano bir cüzdan adresine (owner) ve bir görev listesine (tasks) sahip.
+    public struct TaskBoard has drop {
+        owner: address,
+        tasks: vector<Task>,
+    }
 
-    // TODO: Write a function 'add_task' that:
-    // - Takes board: &mut TaskBoard and task: Task
-    // - Adds the task to the board's vector
-    // The task becomes part of the board's data
-    // public fun add_task(board: &mut TaskBoard, task: Task) {
-    //     // Your code here
-    // }
+    // GÖREV 2: Yeni ve içi boş bir görev panosu (TaskBoard) oluşturan fonksiyon.
+    public fun new_board(owner: address): TaskBoard {
+        TaskBoard {
+            owner,                   // Panonun sahibini kaydediyoruz
+            tasks: vector::empty(),  // Başlangıçta görev listesi boş bir vektör
+        }
+    }
+
+    // GÖREV 3: Panoya yeni bir görev (Task) ekleyen fonksiyon.
+    public fun add_task(board: &mut TaskBoard, task: Task) {
+        // vector::push_back ile 'task' objesini 'board.tasks' listesinin sonuna ekliyoruz.
+        vector::push_back(&mut board.tasks, task);
+    }
 }
-
