@@ -72,8 +72,9 @@ module challenge::day_07 {
     #[test]
     fun test_complete_habit() {
         // 1. Liste oluştur ve eleman ekle
-        let mut list = empty_list();
+       let mut list = empty_list();
         let habit = make_habit(b"Spor Yap");
         add_habit(&mut list, habit);
-
-        // 2. İlk elemanı (
+    }
+}
+        // 2. İlk elemanı 
