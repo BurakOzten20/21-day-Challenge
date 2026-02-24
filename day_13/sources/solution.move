@@ -4,7 +4,6 @@
 /// Students should complete main.move, not this file.
 
 module challenge::day_13_solution {
-    use std::vector;
     use std::string::String;
 
     // Copy TaskBoard and related structs from previous days
@@ -75,4 +74,3 @@ module challenge::day_13_solution {
         count
     }
 }
-
