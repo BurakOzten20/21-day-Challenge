@@ -1,28 +1,14 @@
-/// DAY 14: Tests for Bounty Board
-/// 
-/// Today you will:
-/// 1. Write comprehensive tests
-/// 2. Test all the functions you've created
-/// 3. Practice test organization
-///
-/// Note: You can copy code from day_13/sources/solution.move if needed
-
 module challenge::day_14 {
-    use std::vector;
-    use std::string::String;
-    use std::option::{Self, Option};
+    use std::string::{Self, String};
 
-    #[test_only]
-    use std::unit_test::assert_eq;
-    use std::string;
+    // --- YAPILAR (STRUCTS) & ENUMLAR ---
 
-    // Copy from day_13: All structs and functions
-    public enum TaskStatus has copy, drop {
+    public enum TaskStatus has copy, drop, store {
         Open,
         Completed,
     }
 
-    public struct Task has copy, drop {
+    public struct Task has copy, drop, store {
         title: String,
         reward: u64,
         status: TaskStatus,
@@ -32,6 +18,8 @@ module challenge::day_14 {
         owner: address,
         tasks: vector<Task>,
     }
+
+    // --- ANA FONKSİYONLAR ---
 
     public fun new_task(title: String, reward: u64): Task {
         Task {
@@ -49,7 +37,7 @@ module challenge::day_14 {
     }
 
     public fun add_task(board: &mut TaskBoard, task: Task) {
-        vector::push_back(&mut board.tasks, task);
+        board.tasks.push_back(task);
     }
 
     public fun complete_task(task: &mut Task) {
@@ -57,11 +45,11 @@ module challenge::day_14 {
     }
 
     public fun total_reward(board: &TaskBoard): u64 {
-        let len = vector::length(&board.tasks);
+        let len = board.tasks.length();
         let mut total = 0;
         let mut i = 0;
         while (i < len) {
-            let task = vector::borrow(&board.tasks, i);
+            let task = board.tasks.borrow(i);
             total = total + task.reward;
             i = i + 1;
         };
@@ -69,11 +57,11 @@ module challenge::day_14 {
     }
 
     public fun completed_count(board: &TaskBoard): u64 {
-        let len = vector::length(&board.tasks);
+        let len = board.tasks.length();
         let mut count = 0;
         let mut i = 0;
         while (i < len) {
-            let task = vector::borrow(&board.tasks, i);
+            let task = board.tasks.borrow(i);
             if (task.status == TaskStatus::Completed) {
                 count = count + 1;
             };
@@ -82,27 +70,52 @@ module challenge::day_14 {
         count
     }
 
-    // Note: assert! is a built-in macro in Move 2024 - no import needed!
+    // --- TESTLER ---
 
-    // TODO: Write at least 3 tests:
-    // 
-    // Test 1: test_create_board_and_add_task
-    // - Create a board with an owner
-    // - Add a task
-    // - Verify the task was added
-    // 
-    // Test 2: test_complete_task
-    // - Create board, add tasks
-    // - Complete a task
-    // - Verify completed_count is correct
-    // 
-    // Test 3: test_total_reward
-    // - Create board, add multiple tasks with different rewards
-    // - Verify total_reward is correct
-    // 
-    // #[test]
-    // fun test_create_board_and_add_task() {
-    //     // Your code here
-    // }
+    // Test 1: Pano oluşturma ve görev ekleme testi
+    #[test]
+    fun test_create_board_and_add_task() {
+        let owner = @0x1;
+        let mut board = new_board(owner);
+        let task = new_task(string::utf8(b"Siber Guvenlik Gorevi"), 500);
+        
+        add_task(&mut board, task);
+        
+        // Görev başarıyla eklendi mi kontrolü
+        assert!(board.tasks.length() == 1, 0);
+    }
+
+    // Test 2: Görev tamamlama testi
+    #[test]
+    fun test_complete_task() {
+        let owner = @0x1;
+        let mut board = new_board(owner);
+        
+        let mut task1 = new_task(string::utf8(b"Gorev 1"), 100);
+        let task2 = new_task(string::utf8(b"Gorev 2"), 200);
+        
+        complete_task(&mut task1);
+        
+        add_task(&mut board, task1);
+        add_task(&mut board, task2);
+        
+        // Sadece 1 görev tamamlandığı için sonuç 1 olmalı
+        assert!(completed_count(&board) == 1, 1);
+    }
+
+    // Test 3: Toplam ödül hesaplama testi
+    #[test]
+    fun test_total_reward() {
+        let owner = @0x1;
+        let mut board = new_board(owner);
+        
+        let task1 = new_task(string::utf8(b"Gorev 1"), 150);
+        let task2 = new_task(string::utf8(b"Gorev 2"), 350);
+        
+        add_task(&mut board, task1);
+        add_task(&mut board, task2);
+        
+        // Toplam ödül 150 + 350 = 500 olmalı
+        assert!(total_reward(&board) == 500, 2);
+    }
 }
-
