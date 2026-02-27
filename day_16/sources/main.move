@@ -1,29 +1,34 @@
-/// DAY 16: Introduce Object with UID & key
-/// 
-/// Today you will:
-/// 1. Learn about UID (Unique Identifier)
-/// 2. Learn about the 'key' ability
-/// 3. Create your first Sui object
-///
-/// Note: The code includes plotId support. You can copy code from 
-/// day_15/sources/solution.move if needed (note: plotId functionality has been added)
-
 module challenge::day_16 {
+    // GÖREV 1: Sui Object kütüphanelerini ekliyoruz
+    use sui::object::{Self, UID};
+    use sui::tx_context::TxContext;
+    use std::vector;
 
-
-    // Copy from day_15: FarmCounters struct
+    // SABİTLER
     const MAX_PLOTS: u64 = 20;
     const E_PLOT_NOT_FOUND: u64 = 1;
     const E_PLOT_LIMIT_EXCEEDED: u64 = 2;
-    const E_INVALID_PLOT_ID: u64 = 3;
     const E_PLOT_ALREADY_EXISTS: u64 = 4;
 
+    // STRUCTS
+    
+    // Bu bizim veri paketimiz (Store yeteneği var, çünkü Farm objesinin içine koyacağız)
     public struct FarmCounters has copy, drop, store {
         planted: u64,
         harvested: u64,
         plots: vector<u8>,
     }
 
+    // GÖREV 2: Gerçek SUI OBJESİ (Farm)
+    // 'key' yeteneği bunun bir obje olduğunu ve global storage'da saklanabileceğini söyler.
+    public struct Farm has key {
+        id: UID,                 // Objenin benzersiz kimliği
+        counters: FarmCounters,  // İçindeki veriler
+    }
+
+    // FONKSİYONLAR
+
+    // Yardımcı fonksiyon (Private)
     fun new_counters(): FarmCounters {
         FarmCounters {
             planted: 0,
@@ -32,64 +37,35 @@ module challenge::day_16 {
         }
     }
 
-    fun plant(counters: &mut FarmCounters, plotId: u8) {
-        // Check if plotId is valid (between 1 and 20)
-        assert!(plotId >= 1 && plotId <= (MAX_PLOTS as u8), E_INVALID_PLOT_ID);
+    // GÖREV 3: Farm Objesi Olusturucu (Constructor)
+    // Yeni bir UID oluşturmak için 'ctx' (Transaction Context) gerekir.
+    public fun new_farm(ctx: &mut TxContext): Farm {
+        Farm {
+            id: object::new(ctx), // Benzersiz ID oluşturur
+            counters: new_counters(),
+        }
+    }
+
+    // MANTIK FONKSİYONLARI
+    
+    public fun plant(counters: &mut FarmCounters, plot_id: u8) {
+        // Kapasite kontrolü
+        assert!(vector::length(&counters.plots) < MAX_PLOTS, E_PLOT_LIMIT_EXCEEDED);
         
-        // Check if we've reached the plot limit
-        let len = vector::length(&counters.plots);
-        assert!(len < MAX_PLOTS, E_PLOT_LIMIT_EXCEEDED);
-        
-        // Check if plot already exists in the vector
-        let mut i = 0;
-        while (i < len) {
-            let existing_plot = vector::borrow(&counters.plots, i);
-            assert!(*existing_plot != plotId, E_PLOT_ALREADY_EXISTS);
-            i = i + 1;
-        };
+        // Zaten ekili mi kontrolü
+        let (exists, _) = vector::index_of(&counters.plots, &plot_id);
+        assert!(!exists, E_PLOT_ALREADY_EXISTS);
         
         counters.planted = counters.planted + 1;
-        vector::push_back(&mut counters.plots, plotId);
+        vector::push_back(&mut counters.plots, plot_id);
     }
 
-    fun harvest(counters: &mut FarmCounters, plotId: u8) {
-        let len = vector::length(&counters.plots);
-                
-        // Check if plot exists in the vector and find its index
-        let mut i = 0;
-        let mut found_index = len; 
-        while (i < len) {
-            let existing_plot = vector::borrow(&counters.plots, i);
-            if (*existing_plot == plotId) {
-                found_index = i;
-            };
-            i = i + 1;
-        };
+    public fun harvest(counters: &mut FarmCounters, plot_id: u8) {
+        // Tarlayı bul
+        let (exists, index) = vector::index_of(&counters.plots, &plot_id);
+        assert!(exists, E_PLOT_NOT_FOUND);
         
-        // Assert that plot was found (found_index < len means we found it)
-        assert!(found_index < len, E_PLOT_NOT_FOUND);
-        
-        // Remove the plot from the vector
-        vector::remove(&mut counters.plots, found_index);
         counters.harvested = counters.harvested + 1;
+        vector::remove(&mut counters.plots, index);
     }
-
-    // TODO: Define a struct called 'Farm' with:
-    // - id: UID (this makes it a Sui object)
-    // - counters: FarmCounters
-    // Add 'key' ability (required for Sui objects)
-    // public struct Farm has key {
-    //     id: UID,
-    //     counters: FarmCounters,
-    // }
-
-    // TODO: Write a constructor 'new_farm' that:
-    // - Takes ctx: &mut TxContext
-    // - Creates a UID using object::new(ctx)
-    // - Returns a Farm with the UID and default counters
-    // fun new_farm(ctx: &mut TxContext): Farm {
-    //     // Your code here
-    //     // Hint: let id = object::new(ctx);
-    // }
 }
-
