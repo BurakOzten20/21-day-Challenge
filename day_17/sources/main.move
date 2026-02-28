@@ -1,17 +1,9 @@
-/// DAY 17: Ownership of Objects & Simple Entry Function
-/// 
-/// Today you will:
-/// 1. Learn about object ownership
-/// 2. Write your first entry function
-/// 3. Transfer objects to users
-///
-/// Note: The code includes plotId support. You can copy code from 
-/// day_16/sources/solution.move if needed (note: plotId functionality has been added)
-
 module challenge::day_17 {
-   
+    use sui::object::{Self, UID};
+    use sui::tx_context::TxContext;
+    use sui::transfer; // Obje transferi ve paylaşımı için gerekli kütüphane
+    use std::vector;
 
-    // Copy from day_16: FarmCounters and Farm
     const MAX_PLOTS: u64 = 20;
     const E_PLOT_NOT_FOUND: u64 = 1;
     const E_PLOT_LIMIT_EXCEEDED: u64 = 2;
@@ -33,14 +25,11 @@ module challenge::day_17 {
     }
 
     fun plant(counters: &mut FarmCounters, plotId: u8) {
-        // Check if plotId is valid (between 1 and 20)
         assert!(plotId >= 1 && plotId <= (MAX_PLOTS as u8), E_INVALID_PLOT_ID);
         
-        // Check if we've reached the plot limit
         let len = vector::length(&counters.plots);
         assert!(len < MAX_PLOTS, E_PLOT_LIMIT_EXCEEDED);
         
-        // Check if plot already exists in the vector
         let mut i = 0;
         while (i < len) {
             let existing_plot = vector::borrow(&counters.plots, i);
@@ -55,7 +44,6 @@ module challenge::day_17 {
     fun harvest(counters: &mut FarmCounters, plotId: u8) {
         let len = vector::length(&counters.plots);
                 
-        // Check if plot exists in the vector and find its index
         let mut i = 0;
         let mut found_index = len; 
         while (i < len) {
@@ -66,10 +54,8 @@ module challenge::day_17 {
             i = i + 1;
         };
         
-        // Assert that plot was found (found_index < len means we found it)
         assert!(found_index < len, E_PLOT_NOT_FOUND);
         
-        // Remove the plot from the vector
         vector::remove(&mut counters.plots, found_index);
         counters.harvested = counters.harvested + 1;
     }
@@ -86,26 +72,24 @@ module challenge::day_17 {
         }
     }
 
-    // TODO: Write an entry function 'create_farm' that:
-    // - Takes ctx: &mut TxContext
-    // - Creates a Farm using new_farm
-    // - Make it shareable object using transfer::share_object(farm)
-    // entry fun create_farm(ctx: &mut TxContext) {
-    //     // Your code here
-    // }
+    // --- DAY 17 GÖREVLERİ (TAMAMLANDI) ---
 
-    // TODO: Write a function 'plant_on_farm' that:
-    // - Takes farm: &mut Farm, plotId: u8
-    // - Calls plant() on farm.counters with plotId
-    // fun plant_on_farm(farm: &mut Farm, plotId: u8) {
-    //     // Your code here
-    // }
+    // 1. Dışarıdan çağrılabilen, Çiftlik yaratma ve paylaşma fonksiyonu
+    public entry fun create_farm(ctx: &mut TxContext) {
+        let farm = new_farm(ctx);
+        // Obgeyi ağdaki herkesin etkileşime girebileceği "shared" (paylaşımlı) objeye çeviriyoruz
+        transfer::share_object(farm);
+    }
 
-    // TODO: Write a function 'harvest_from_farm' that:
-    // - Takes farm: &mut Farm, plotId: u8
-    // - Calls harvest() on farm.counters with plotId
-    // fun harvest_from_farm(farm: &mut Farm, plotId: u8) {
-    //     // Your code here
-    // }
+    // 2. Çiftliğe tohum ekme fonksiyonu
+    public fun plant_on_farm(farm: &mut Farm, plotId: u8) {
+        // Farm objesinin içindeki sayaca (counters) referans göndererek işlemi yapıyoruz
+        plant(&mut farm.counters, plotId);
+    }
+
+    // 3. Çiftlikten hasat yapma fonksiyonu
+    public fun harvest_from_farm(farm: &mut Farm, plotId: u8) {
+        // Aynı şekilde Farm objesinin içindeki sayaca erişiyoruz
+        harvest(&mut farm.counters, plotId);
+    }
 }
-
