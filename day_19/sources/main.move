@@ -1,16 +1,8 @@
-/// DAY 19: Simple Query Functions (View-like)
-/// 
-/// Today you will:
-/// 1. Write read-only functions
-/// 2. Query object state
-/// 3. Write tests for query functions (optional)
-///
-/// Note: The code includes plotId support with all farm functions. 
-/// You can reference day_18/sources/solution.move for basic structure, 
-
-
 module challenge::day_19 {
-   
+    use sui::object::{Self, UID};
+    use sui::transfer;
+    use sui::tx_context::TxContext;
+    use std::vector;
 
     const MAX_PLOTS: u64 = 20;
     const E_PLOT_NOT_FOUND: u64 = 1;
@@ -33,14 +25,11 @@ module challenge::day_19 {
     }
 
     fun plant(counters: &mut FarmCounters, plotId: u8) {
-        // Check if plotId is valid (between 1 and 20)
         assert!(plotId >= 1 && plotId <= (MAX_PLOTS as u8), E_INVALID_PLOT_ID);
         
-        // Check if we've reached the plot limit
         let len = vector::length(&counters.plots);
         assert!(len < MAX_PLOTS, E_PLOT_LIMIT_EXCEEDED);
         
-        // Check if plot already exists in the vector
         let mut i = 0;
         while (i < len) {
             let existing_plot = vector::borrow(&counters.plots, i);
@@ -55,7 +44,6 @@ module challenge::day_19 {
     fun harvest(counters: &mut FarmCounters, plotId: u8) {
         let len = vector::length(&counters.plots);
                 
-        // Check if plot exists in the vector and find its index
         let mut i = 0;
         let mut found_index = len; 
         while (i < len) {
@@ -66,10 +54,8 @@ module challenge::day_19 {
             i = i + 1;
         };
         
-        // Assert that plot was found (found_index < len means we found it)
         assert!(found_index < len, E_PLOT_NOT_FOUND);
         
-        // Remove the plot from the vector
         vector::remove(&mut counters.plots, found_index);
         counters.harvested = counters.harvested + 1;
     }
@@ -86,7 +72,7 @@ module challenge::day_19 {
         }
     }
 
-    entry fun create_farm(ctx: &mut TxContext) {
+    public entry fun create_farm(ctx: &mut TxContext) {
         let farm = new_farm(ctx);
         transfer::share_object(farm);
     }
@@ -99,31 +85,45 @@ module challenge::day_19 {
         harvest(&mut farm.counters, plotId);
     }
 
-    entry fun plant_on_farm_entry(farm: &mut Farm, plotId: u8) {
+    public entry fun plant_on_farm_entry(farm: &mut Farm, plotId: u8) {
         plant_on_farm(farm, plotId);
     }
 
-    entry fun harvest_from_farm_entry(farm: &mut Farm, plotId: u8) {
+    public entry fun harvest_from_farm_entry(farm: &mut Farm, plotId: u8) {
         harvest_from_farm(farm, plotId);
     }
 
-    // TODO: Write a function 'total_planted' that:
-    // - Takes farm: &Farm (read-only reference)
-    // - Returns u64 (the planted count)
-    // public fun total_planted(farm: &Farm): u64 {
-    //     // Your code here
-    // }
+    // --- DAY 19: SORGULAMA (VIEW) FONKSİYONLARI ---
 
-    // TODO: Write a function 'total_harvested' that:
-    // - Takes farm: &Farm
-    // - Returns u64 (the harvested count)
-    // public fun total_harvested(farm: &Farm): u64 {
-    //     // Your code here
-    // }
+    // Toplam ekilen ürün sayısını döndürür (Salt okunur: &Farm)
+    public fun total_planted(farm: &Farm): u64 {
+        farm.counters.planted
+    }
 
-    // TODO: (Optional) Write a test that:
-    // - Creates a farm
-    // - Plants once
-    // - Checks that total_planted returns 1
+    // Toplam hasat edilen ürün sayısını döndürür (Salt okunur: &Farm)
+    public fun total_harvested(farm: &Farm): u64 {
+        farm.counters.harvested
+    }
+
+    // --- DAY 19: TEST ---
+    
+    #[test]
+    fun test_query_functions() {
+        use sui::tx_context;
+        
+        // Sahte bir senaryo ve cüzdan context'i oluşturuyoruz
+        let mut ctx = tx_context::dummy();
+        let mut farm = new_farm(&mut ctx);
+        
+        // 1 numaralı tarlaya ektik
+        plant_on_farm(&mut farm, 1);
+        
+        // Sorgulama fonksiyonlarımızın doğru çalışıp çalışmadığını test ediyoruz
+        assert!(total_planted(&farm) == 1, 0);
+        assert!(total_harvested(&farm) == 0, 1);
+        
+        // Test bittiğinde, Drop yeteneği olmayan objeyi güvenlice siliyoruz
+        let Farm { id, counters: _ } = farm;
+        object::delete(id);
+    }
 }
-
